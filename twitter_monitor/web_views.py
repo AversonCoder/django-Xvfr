@@ -172,10 +172,20 @@ def start_monitoring(request):
         
         # 立即执行一次监控
         try:
-            monitor_all_users_task.delay()
+            # 尝试使用 Celery 异步执行
+            try:
+                monitor_all_users_task.delay()
+                task_msg = '已加入任务队列'
+            except Exception as celery_error:
+                # 如果 Celery/Redis 不可用，记录警告但不中断流程
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f'Celery 不可用，请检查 Redis 服务: {str(celery_error)}')
+                task_msg = '⚠️ 定时任务服务未启动，请在 Railway 添加 Redis 服务'
+            
             messages.success(
                 request, 
-                f'监控已启动！已选择 {len(user_ids)} 个用户，监控频率: {frequency_text}'
+                f'监控已启动！已选择 {len(user_ids)} 个用户，监控频率: {frequency_text}。{task_msg}'
             )
         except Exception as e:
             messages.error(request, f'启动失败: {str(e)}')
