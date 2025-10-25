@@ -23,6 +23,8 @@ urlpatterns = [
     path('start-monitoring/', web_views.start_monitoring, name='start_monitoring'),
     path('user/<int:user_id>/', web_views.user_detail, name='user_detail'),
     path('api-docs/', web_views.api_docs, name='api_docs'),
+    path('logs/', web_views.logs, name='logs'),  # 新增：日志页面
+    path('test-api/', web_views.test_api, name='test_api'),  # 新增：API 测试
     
     # REST API
     path('api/', include(router.urls)),

@@ -238,3 +238,80 @@ def api_docs(request):
     API 文档页面
     """
     return render(request, 'twitter_monitor/api_docs.html')
+
+
+def logs(request):
+    """
+    监控日志页面
+    """
+    # 获取最近 100 条日志
+    logs = MonitorLog.objects.all().order_by('-created_at')[:100]
+    
+    # 统计数据
+    total_logs = MonitorLog.objects.count()
+    success_logs = MonitorLog.objects.filter(status='success').count()
+    failed_logs = MonitorLog.objects.filter(status='failed').count()
+    total_tweets = sum(MonitorLog.objects.values_list('tweets_fetched', flat=True))
+    total_replies = sum(MonitorLog.objects.values_list('replies_fetched', flat=True))
+    
+    context = {
+        'logs': logs,
+        'stats': {
+            'total': total_logs,
+            'success': success_logs,
+            'failed': failed_logs,
+            'total_tweets': total_tweets,
+            'total_replies': total_replies,
+        }
+    }
+    
+    return render(request, 'twitter_monitor/logs.html', context)
+
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+@require_POST
+def test_api(request):
+    """
+    测试 Twitter API 连接
+    """
+    try:
+        from .services import TwitterService
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info("开始测试 Twitter API")
+        
+        service = TwitterService()
+        
+        # 测试：获取 Twitter 官方账号信息
+        user_info = service.get_user_by_username('Twitter')
+        
+        if user_info:
+            logger.info(f"API 测试成功：{user_info}")
+            return JsonResponse({
+                'success': True,
+                'message': 'API 连接成功',
+                'result': {
+                    'user_id': user_info['user_id'],
+                    'username': user_info['username'],
+                    'display_name': user_info['display_name'],
+                    'api_working': True,
+                    'test_account': '@Twitter'
+                }
+            })
+        else:
+            logger.error("API 调用失败：无法获取用户信息")
+            return JsonResponse({
+                'success': False,
+                'error': 'API 调用失败：无法获取用户信息，请检查 API 密钥是否正确'
+            })
+    except Exception as e:
+        logger.error(f"API 测试异常：{str(e)}")
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'error': f'异常：{str(e)}',
+            'traceback': traceback.format_exc()
+        })
