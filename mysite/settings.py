@@ -32,9 +32,18 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-# FORM SUBMISSION
-# Comment out the following line and place your railway URL, and your production URL in the array.
-# CSRF_TRUSTED_ORIGINS = ["*"]
+# CSRF 可信源配置（生产环境必须）
+# 从环境变量读取或使用默认值
+CSRF_TRUSTED_ORIGINS = [
+    'https://server-production-001a.up.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# 如果有其他域名，从环境变量中添加
+railway_url = os.environ.get('RAILWAY_STATIC_URL')
+if railway_url and railway_url not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(railway_url)
 
 # Application definition
 
