@@ -1,0 +1,167 @@
+{% extends "twitter_monitor/base.html" %}
+
+{% block extra_style %}
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 14px 18px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #1DA1F2;
+        box-shadow: 0 0 0 4px rgba(29, 161, 242, 0.1);
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 6px;
+        color: #666;
+        font-size: 13px;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 14px 28px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex: 1;
+    }
+
+    .btn-primary {
+        background: #1DA1F2;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #1a8cd8;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(29, 161, 242, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    .username-preview {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .username-preview.show {
+        display: block;
+    }
+
+    .username-preview strong {
+        color: #1DA1F2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2 style="margin-bottom: 30px; color: #333;">添加监控用户</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% url 'twitter_monitor:add_user' %}">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="username">Twitter 用户名</label>
+            <input 
+                type="text" 
+                id="username" 
+                name="username" 
+                placeholder="例如: elonmusk" 
+                required
+                autocomplete="off">
+            <small>输入要监控的 Twitter 用户名（不需要 @ 符号）</small>
+            
+            <div class="username-preview" id="username-preview">
+                将监控用户: <strong id="preview-username"></strong>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                添加用户
+            </button>
+            <a href="{% url 'twitter_monitor:dashboard' %}" class="btn btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+                返回
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    const usernameInput = document.getElementById('username');
+    const usernamePreview = document.getElementById('username-preview');
+    const previewUsername = document.getElementById('preview-username');
+
+    usernameInput.addEventListener('input', function() {
+        let value = this.value.trim().replace('@', '');
+        if (value) {
+            previewUsername.textContent = '@' + value;
+            usernamePreview.classList.add('show');
+        } else {
+            usernamePreview.classList.remove('show');
+        }
+    });
+</script>
+{% endblock %}

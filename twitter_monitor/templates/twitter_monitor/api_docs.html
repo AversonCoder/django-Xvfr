@@ -1,0 +1,187 @@
+{% extends "twitter_monitor/base.html" %}
+
+{% block extra_style %}
+<style>
+    .api-section {
+        margin-bottom: 40px;
+    }
+
+    .api-section h2 {
+        color: #333;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .endpoint {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .endpoint-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .method {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .method-get {
+        background: #28a745;
+        color: white;
+    }
+
+    .method-post {
+        background: #1DA1F2;
+        color: white;
+    }
+
+    .endpoint-url {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        color: #333;
+        flex: 1;
+    }
+
+    .endpoint-description {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+
+    .example-code {
+        background: #2d2d2d;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .code-label {
+        color: #888;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 30px; color: #333;">API 文档</h1>
+
+<div class="alert alert-info">
+    <strong>提示：</strong>所有 API 端点都以 <code>/twitter/api/</code> 为基础路径
+</div>
+
+<div class="api-section">
+    <h2>监控用户 API</h2>
+    
+    <div class="endpoint">
+        <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <code class="endpoint-url">/twitter/api/monitored-users/</code>
+        </div>
+        <div class="endpoint-description">获取所有监控用户列表（支持分页、搜索、过滤）</div>
+        <div class="code-label">示例请求：</div>
+        <pre class="example-code">curl http://localhost:8000/twitter/api/monitored-users/</pre>
+    </div>
+
+    <div class="endpoint">
+        <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <code class="endpoint-url">/twitter/api/monitored-users/add_user/</code>
+        </div>
+        <div class="endpoint-description">添加新的监控用户</div>
+        <div class="code-label">示例请求：</div>
+        <pre class="example-code">curl -X POST http://localhost:8000/twitter/api/monitored-users/add_user/ \
+  -H "Content-Type: application/json" \
+  -d '{"username": "elonmusk"}'</pre>
+    </div>
+
+    <div class="endpoint">
+        <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <code class="endpoint-url">/twitter/api/monitored-users/{id}/monitor_now/</code>
+        </div>
+        <div class="endpoint-description">立即监控指定用户</div>
+        <div class="code-label">示例请求：</div>
+        <pre class="example-code">curl -X POST http://localhost:8000/twitter/api/monitored-users/1/monitor_now/</pre>
+    </div>
+
+    <div class="endpoint">
+        <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <code class="endpoint-url">/twitter/api/monitored-users/monitor_all/</code>
+        </div>
+        <div class="endpoint-description">监控所有启用的用户</div>
+        <div class="code-label">示例请求：</div>
+        <pre class="example-code">curl -X POST http://localhost:8000/twitter/api/monitored-users/monitor_all/</pre>
+    </div>
+</div>
+
+<div class="api-section">
+    <h2>推文 API</h2>
+    
+    <div class="endpoint">
+        <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <code class="endpoint-url">/twitter/api/tweets/</code>
+        </div>
+        <div class="endpoint-description">获取所有推文（支持分页、搜索、过滤、排序）</div>
+        <div class="code-label">示例请求：</div>
+        <pre class="example-code">curl http://localhost:8000/twitter/api/tweets/?author=1&ordering=-created_at</pre>
+    </div>
+
+    <div class="endpoint">
+        <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <code class="endpoint-url">/twitter/api/tweets/{id}/replies/</code>
+        </div>
+        <div class="endpoint-description">获取指定推文的所有回复</div>
+        <div class="code-label">示例请求：</div>
+        <pre class="example-code">curl http://localhost:8000/twitter/api/tweets/1/replies/</pre>
+    </div>
+</div>
+
+<div class="api-section">
+    <h2>回复 API</h2>
+    
+    <div class="endpoint">
+        <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <code class="endpoint-url">/twitter/api/replies/</code>
+        </div>
+        <div class="endpoint-description">获取所有回复（支持分页、搜索、过滤）</div>
+        <div class="code-label">示例请求：</div>
+        <pre class="example-code">curl http://localhost:8000/twitter/api/replies/?author=1</pre>
+    </div>
+</div>
+
+<div class="api-section">
+    <h2>监控日志 API</h2>
+    
+    <div class="endpoint">
+        <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <code class="endpoint-url">/twitter/api/logs/</code>
+        </div>
+        <div class="endpoint-description">获取所有监控日志</div>
+        <div class="code-label">示例请求：</div>
+        <pre class="example-code">curl http://localhost:8000/twitter/api/logs/?user=1&status=success</pre>
+    </div>
+</div>
+
+<div style="text-align: center; margin-top: 40px;">
+    <a href="{% url 'twitter_monitor:dashboard' %}" class="btn btn-secondary" style="padding: 12px 24px; text-decoration: none;">返回首页</a>
+</div>
+{% endblock %}

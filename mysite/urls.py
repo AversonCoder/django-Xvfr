@@ -15,10 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
+from twitter_monitor import web_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('twitter/', include('twitter_monitor.urls')),
-    path('', RedirectView.as_view(url='/twitter/', permanent=False)),  # 首页跳转
+    path('', web_views.dashboard, name='home'),  # 首页直接显示管理界面
 ]

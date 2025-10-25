@@ -1,0 +1,427 @@
+{% extends "twitter_monitor/base.html" %}
+
+{% block extra_style %}
+<style>
+    .config-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #1DA1F2;
+        box-shadow: 0 0 0 4px rgba(29, 161, 242, 0.1);
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+        font-size: 12px;
+    }
+
+    .user-select-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px;
+        background: #f8f9fa;
+    }
+
+    .user-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        margin-bottom: 8px;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .user-checkbox:hover {
+        background: #f0f0f0;
+    }
+
+    .user-checkbox input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 12px;
+        cursor: pointer;
+    }
+
+    .user-checkbox label {
+        cursor: pointer;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .schedule-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .schedule-option {
+        padding: 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .schedule-option:hover {
+        border-color: #1DA1F2;
+        background: #f0f8ff;
+    }
+
+    .schedule-option input[type="radio"] {
+        margin-right: 8px;
+    }
+
+    .schedule-option.selected {
+        border-color: #1DA1F2;
+        background: #e3f2fd;
+    }
+
+    .custom-schedule {
+        margin-top: 15px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .custom-schedule.active {
+        display: block;
+    }
+
+    .time-inputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 14px 28px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: #1DA1F2;
+        color: white;
+        flex: 1;
+    }
+
+    .btn-primary:hover {
+        background: #1a8cd8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(29, 161, 242, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    .status-panel {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 30px;
+    }
+
+    .status-panel h3 {
+        font-size: 16px;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .status-item:last-child {
+        border-bottom: none;
+    }
+
+    .status-label {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .status-value {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: start;
+        gap: 12px;
+    }
+
+    .alert-info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border-left: 4px solid #17a2b8;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="config-container">
+    <h2 style="margin-bottom: 30px; color: #333;">监控配置</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="alert alert-info">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+        <div>
+            <strong>配置说明：</strong><br>
+            选择需要监控的用户和定时频率，系统将自动抓取这些用户的推文、回复和互动数据。
+        </div>
+    </div>
+
+    <form method="post" action="{% url 'twitter_monitor:start_monitoring' %}">
+        {% csrf_token %}
+        
+        <!-- 选择监控用户 -->
+        <div class="form-group">
+            <label>选择监控用户</label>
+            <div class="user-select-list">
+                {% if users %}
+                    <label style="display: block; margin-bottom: 10px;">
+                        <input type="checkbox" id="select-all" style="margin-right: 8px;">
+                        <strong>全选</strong>
+                    </label>
+                    {% for user in users %}
+                    <div class="user-checkbox">
+                        <input type="checkbox" name="user_ids" value="{{ user.id }}" id="user-{{ user.id }}" {% if user.is_active %}checked{% endif %}>
+                        <label for="user-{{ user.id }}">
+                            @{{ user.username }}
+                            {% if user.display_name %} - {{ user.display_name }}{% endif %}
+                        </label>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; padding: 20px; color: #666;">
+                        暂无监控用户，请先<a href="{% url 'twitter_monitor:add_user' %}" style="color: #1DA1F2;">添加用户</a>
+                    </p>
+                {% endif %}
+            </div>
+            <small>选择需要启用监控的用户</small>
+        </div>
+
+        <!-- 监控频率 -->
+        <div class="form-group">
+            <label>监控频率</label>
+            <div class="schedule-options">
+                <div class="schedule-option" data-value="15">
+                    <input type="radio" name="interval" value="15" id="interval-15">
+                    <label for="interval-15">每 15 分钟</label>
+                </div>
+                <div class="schedule-option selected" data-value="30">
+                    <input type="radio" name="interval" value="30" id="interval-30" checked>
+                    <label for="interval-30">每 30 分钟</label>
+                </div>
+                <div class="schedule-option" data-value="60">
+                    <input type="radio" name="interval" value="60" id="interval-60">
+                    <label for="interval-60">每 1 小时</label>
+                </div>
+                <div class="schedule-option" data-value="180">
+                    <input type="radio" name="interval" value="180" id="interval-180">
+                    <label for="interval-180">每 3 小时</label>
+                </div>
+                <div class="schedule-option" data-value="360">
+                    <input type="radio" name="interval" value="360" id="interval-360">
+                    <label for="interval-360">每 6 小时</label>
+                </div>
+                <div class="schedule-option" data-value="custom">
+                    <input type="radio" name="interval" value="custom" id="interval-custom">
+                    <label for="interval-custom">自定义</label>
+                </div>
+            </div>
+            <small>选择自动监控的时间间隔</small>
+
+            <!-- 自定义时间 -->
+            <div class="custom-schedule" id="custom-schedule">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600;">自定义定时</label>
+                <div class="time-inputs">
+                    <div>
+                        <label style="font-size: 12px; color: #666;">分钟</label>
+                        <input type="number" name="custom_minute" placeholder="*/30" value="*/30">
+                        <small>例如: */30 表示每30分钟</small>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: #666;">小时</label>
+                        <input type="number" name="custom_hour" placeholder="*" value="*">
+                        <small>例如: */2 表示每2小时</small>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: #666;">星期</label>
+                        <select name="custom_day_of_week">
+                            <option value="*">每天</option>
+                            <option value="1-5">工作日</option>
+                            <option value="0,6">周末</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 高级选项 -->
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="enable_notifications" style="width: auto; margin-right: 8px;">
+                启用通知（监控完成后发送通知）
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="auto_cleanup" checked style="width: auto; margin-right: 8px;">
+                自动清理旧数据（保留最近 30 天）
+            </label>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="btn-group">
+            <button type="submit" name="action" value="start" class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                启动监控
+            </button>
+            <button type="submit" name="action" value="stop" class="btn btn-secondary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6h12v12H6z"/>
+                </svg>
+                停止监控
+            </button>
+        </div>
+    </form>
+
+    <!-- 当前状态 -->
+    <div class="status-panel">
+        <h3>当前监控状态</h3>
+        <div class="status-item">
+            <span class="status-label">监控状态</span>
+            <span class="status-value" style="color: {% if monitoring_active %}#28a745{% else %}#dc3545{% endif %};">
+                {% if monitoring_active %}运行中{% else %}已停止{% endif %}
+            </span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">启用用户数</span>
+            <span class="status-value">{{ active_users_count }}</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">当前频率</span>
+            <span class="status-value">{{ current_interval }}</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">下次执行</span>
+            <span class="status-value">{{ next_run_time|default:"未安排" }}</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 全选功能
+    document.getElementById('select-all')?.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('input[name="user_ids"]');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    // 监控频率选择
+    document.querySelectorAll('.schedule-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.schedule-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+            
+            const customSchedule = document.getElementById('custom-schedule');
+            if (this.dataset.value === 'custom') {
+                customSchedule.classList.add('active');
+            } else {
+                customSchedule.classList.remove('active');
+            }
+        });
+    });
+
+    // 初始化自定义选项显示
+    if (document.querySelector('#interval-custom:checked')) {
+        document.getElementById('custom-schedule').classList.add('active');
+    }
+</script>
+{% endblock %}
