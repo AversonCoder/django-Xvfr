@@ -40,10 +40,15 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
 ]
 
-# 如果有其他域名，从环境变量中添加
+# 如果有其他域名，从环境变量中添加（确保包含协议）
 railway_url = os.environ.get('RAILWAY_STATIC_URL')
-if railway_url and railway_url not in CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS.append(railway_url)
+if railway_url:
+    # 如果环境变量没有协议，自动添加 https://
+    if not railway_url.startswith(('http://', 'https://')):
+        railway_url = f'https://{railway_url}'
+    # 检查是否已存在，避免重复
+    if railway_url not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(railway_url)
 
 # Application definition
 
