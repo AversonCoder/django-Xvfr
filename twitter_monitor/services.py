@@ -24,8 +24,15 @@ logger = logging.getLogger(__name__)
 class TwitterService:
     """Twitter API 服务类"""
     
-    def __init__(self):
-        """初始化 Twitter API 客户端"""
+    def __init__(self, wait_on_rate_limit=False):
+        """
+        初始化 Twitter API 客户端
+        
+        Args:
+            wait_on_rate_limit: 是否在遇到速率限制时自动等待
+                              False: 立即抛出异常（推荐，避免 Worker 超时）
+                              True: 自动等待直到限制解除
+        """
         # 使用 Bearer Token 进行认证 (只读访问)
         bearer_token = getattr(settings, 'TWITTER_BEARER_TOKEN', None)
         
@@ -34,7 +41,7 @@ class TwitterService:
         
         self.client = tweepy.Client(
             bearer_token=bearer_token,
-            wait_on_rate_limit=True
+            wait_on_rate_limit=wait_on_rate_limit  # 默认不等待，避免 Worker 超时
         )
     
     def get_user_by_username(self, username):
@@ -62,6 +69,15 @@ class TwitterService:
                     'profile_image_url': user.profile_image_url or '',
                 }
             return None
+        except tweepy.errors.TooManyRequests as e:
+            logger.error(f"获取用户信息失败 @{username}: API 速率限制 - {str(e)}")
+            raise ValueError("Twitter API 速率限制，请稍后再试") from e
+        except tweepy.errors.Forbidden as e:
+            logger.error(f"获取用户信息失败 @{username}: API 权限不足 - {str(e)}")
+            raise ValueError("免费版 Twitter API 无法使用该功能，需要升级到 Basic 级别") from e
+        except tweepy.errors.Unauthorized as e:
+            logger.error(f"获取用户信息失败 @{username}: API 密钥错误 - {str(e)}")
+            raise ValueError("Twitter API 密钥配置错误或已过期") from e
         except Exception as e:
             logger.error(f"获取用户信息失败 @{username}: {str(e)}")
             return None

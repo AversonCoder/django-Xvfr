@@ -278,12 +278,28 @@ def test_api(request):
     """
     try:
         from .services import TwitterService
+        from django.conf import settings
         import logging
         
         logger = logging.getLogger(__name__)
         logger.info("开始测试 Twitter API")
         
-        service = TwitterService()
+        # 检查环境变量
+        bearer_token = getattr(settings, 'TWITTER_BEARER_TOKEN', '')
+        
+        if not bearer_token:
+            return JsonResponse({
+                'success': False,
+                'error': 'TWITTER_BEARER_TOKEN 环境变量未配置！',
+                'hint': '请在 Railway Variables 中添加 TWITTER_BEARER_TOKEN'
+            })
+        
+        # 显示 Token 前几位（隐藏敏感信息）
+        token_preview = bearer_token[:20] + '...' if len(bearer_token) > 20 else bearer_token
+        logger.info(f"Bearer Token: {token_preview}")
+        
+        # 创建服务，不等待速率限制
+        service = TwitterService(wait_on_rate_limit=False)
         
         # 测试：获取 Twitter 官方账号信息
         user_info = service.get_user_by_username('Twitter')
@@ -292,20 +308,73 @@ def test_api(request):
             logger.info(f"API 测试成功：{user_info}")
             return JsonResponse({
                 'success': True,
-                'message': 'API 连接成功',
+                'message': 'API 连接成功！',
                 'result': {
                     'user_id': user_info['user_id'],
                     'username': user_info['username'],
                     'display_name': user_info['display_name'],
                     'api_working': True,
-                    'test_account': '@Twitter'
+                    'test_account': '@Twitter',
+                    'token_configured': True,
+                    'token_preview': token_preview
                 }
             })
         else:
             logger.error("API 调用失败：无法获取用户信息")
             return JsonResponse({
                 'success': False,
-                'error': 'API 调用失败：无法获取用户信息，请检查 API 密钥是否正确'
+                'error': 'API 调用失败：无法获取用户信息',
+                'possible_reasons': [
+                    '1. API 密钥配置错误或已过期',
+                    '2. 免费版 API 无法使用该端点（需要 Basic 级别）',
+                    '3. Bearer Token 格式错误',
+                    '4. Twitter API 服务不可用'
+                ],
+                'token_configured': True,
+                'token_preview': token_preview,
+                'next_steps': '请访问 https://developer.twitter.com/en/portal/dashboard 检查 API 密钥和订阅级别'
+            })
+    except ValueError as e:
+        # 捕获我们自己抛出的异常（速率限制、权限不足等）
+        error_msg = str(e)
+        logger.error(f"API 测试失败: {error_msg}")
+        
+        if "API 速率限制" in error_msg:
+            return JsonResponse({
+                'success': False,
+                'error': '⚠️ Twitter API 速率限制',
+                'message': '您的 API 调用次数已达到上限，请稍后再试。',
+                'hint': '免费版 API 每 15 分钟只有 15 次调用机会，请升级到 Basic 级别获得更多配额。',
+                'wait_time': '请等待 10-15 分钟后重试'
+            })
+        elif "免费版" in error_msg or "权限不足" in error_msg:
+            return JsonResponse({
+                'success': False,
+                'error': '❌ API 权限不足',
+                'message': '免费版 Twitter API 无法使用监控功能。',
+                'reason': '当前代码调用的端点需要 Basic 级别（$100/月）或以上。',
+                'solution': '请访问 https://developer.twitter.com/en/portal/products 升级你的订阅。',
+                'alternatives': [
+                    '升级到 Basic 级别 ($100/月)',
+                    '等待 Twitter 降低 API 门槛',
+                    '使用其他社交媒体平台的 API'
+                ]
+            })
+        elif "密钥错误" in error_msg or "已过期" in error_msg:
+            return JsonResponse({
+                'success': False,
+                'error': '❌ API 密钥错误',
+                'message': 'Twitter API 密钥配置错误或已过期。',
+                'next_steps': [
+                    '1. 访问 https://developer.twitter.com/en/portal/dashboard',
+                    '2. 检查密钥是否还有效',
+                    '3. 如果已撤销，重新生成并更新 Railway 环境变量'
+                ]
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
             })
     except Exception as e:
         logger.error(f"API 测试异常：{str(e)}")
@@ -313,5 +382,6 @@ def test_api(request):
         return JsonResponse({
             'success': False,
             'error': f'异常：{str(e)}',
-            'traceback': traceback.format_exc()
+            'traceback': traceback.format_exc(),
+            'hint': '请检查 Railway 日志获取详细错误信息'
         })
