@@ -11,6 +11,7 @@ from celery.schedules import crontab
 from .models import MonitoredUser, Tweet, Reply, MonitorLog
 from .services import TwitterMonitorService
 from .tasks import monitor_all_users_task
+from .schedule_manager import update_monitoring_schedule, stop_monitoring_schedule, get_current_schedule
 
 
 def dashboard(request):
@@ -139,12 +140,42 @@ def start_monitoring(request):
         # 获取监控频率
         interval = request.POST.get('interval')
         
+        # 处理频率配置
+        frequency_text = ''
+        schedule_updated = False
+        
+        if interval == 'custom':
+            # 自定义频率
+            custom_minute = request.POST.get('custom_minute', '*/30')
+            custom_hour = request.POST.get('custom_hour', '*')
+            custom_day_of_week = request.POST.get('custom_day_of_week', '*')
+            
+            frequency_text = f'自定义（分钟:{custom_minute}, 小时:{custom_hour}, 星期:{custom_day_of_week}）'
+            
+            # 更新 Celery Beat 定时任务
+            schedule_updated = update_monitoring_schedule(
+                'crontab',
+                minute=custom_minute,
+                hour=custom_hour,
+                day_of_week=custom_day_of_week
+            )
+        else:
+            # 预设频率
+            interval_minutes = int(interval)
+            frequency_text = f'每 {interval_minutes} 分钟'
+            
+            # 更新 Celery Beat 定时任务
+            schedule_updated = update_monitoring_schedule(
+                'interval',
+                interval_minutes=interval_minutes
+            )
+        
         # 立即执行一次监控
         try:
             monitor_all_users_task.delay()
             messages.success(
                 request, 
-                f'监控已启动！已选择 {len(user_ids)} 个用户，监控频率: 每 {interval} 分钟'
+                f'监控已启动！已选择 {len(user_ids)} 个用户，监控频率: {frequency_text}'
             )
         except Exception as e:
             messages.error(request, f'启动失败: {str(e)}')
@@ -152,6 +183,10 @@ def start_monitoring(request):
     elif action == 'stop':
         # 停止所有监控
         MonitoredUser.objects.all().update(is_active=False)
+        
+        # 禁用定时任务
+        stop_monitoring_schedule()
+        
         messages.info(request, '监控已停止')
     
     return redirect('twitter_monitor:monitor_config')

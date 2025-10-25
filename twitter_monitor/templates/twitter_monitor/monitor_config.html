@@ -283,10 +283,13 @@
             <small>选择需要启用监控的用户</small>
         </div>
 
-        <!-- 监控频率 -->
         <div class="form-group">
             <label>监控频率</label>
             <div class="schedule-options">
+                <div class="schedule-option" data-value="5">
+                    <input type="radio" name="interval" value="5" id="interval-5">
+                    <label for="interval-5">每 5 分钟</label>
+                </div>
                 <div class="schedule-option" data-value="15">
                     <input type="radio" name="interval" value="15" id="interval-15">
                     <label for="interval-15">每 15 分钟</label>
@@ -320,12 +323,12 @@
                 <div class="time-inputs">
                     <div>
                         <label style="font-size: 12px; color: #666;">分钟</label>
-                        <input type="number" name="custom_minute" placeholder="*/30" value="*/30">
+                        <input type="text" name="custom_minute" placeholder="*/30" value="*/30">
                         <small>例如: */30 表示每30分钟</small>
                     </div>
                     <div>
                         <label style="font-size: 12px; color: #666;">小时</label>
-                        <input type="number" name="custom_hour" placeholder="*" value="*">
+                        <input type="text" name="custom_hour" placeholder="*" value="*">
                         <small>例如: */2 表示每2小时</small>
                     </div>
                     <div>
